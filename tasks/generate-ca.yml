@@ -1,0 +1,26 @@
+---
+- name: Generate CA key
+  command: >
+    openssl genrsa
+      -out {{ openssl_cert_path }}ca.key
+      2048
+      creates={{ openssl_cert_path }}ca.key
+
+- name: Generate CA certificate
+  command: >
+    openssl req -new -x509 -key {{ openssl_cert_path }}ca.key
+      -subj "/CN={{openssl_ca_name}} {{ ansible_date_time.iso8601 }}"
+      -out {{ openssl_cert_path }}ca.crt
+      -days 365
+      creates={{ openssl_cert_path }}ca.crt
+
+- name: Get CA Certificate hash
+  command: "openssl x509 -noout -hash -in {{ openssl_cert_path }}ca.crt"
+  register: ca_hash
+  changed_when: False
+
+- name: Link CA hash
+  file:
+    src: "{{ openssl_cert_path }}ca.crt"
+    dest: "/etc/ssl/certs/{{ ca_hash.stdout | trim }}.0"
+    state: link

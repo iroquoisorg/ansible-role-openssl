@@ -1,0 +1,13 @@
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.0       = {{ openssl_cert_common_name }}
+{% for name in openssl_cert_alternate_names %}
+DNS.{{ loop.index }}       = {{ name }}
+{% endfor %}
+{% for ip in openssl_cert_ips %}
+IP.{{ loop.index }}        = {{ ip }}
+{% endfor %}

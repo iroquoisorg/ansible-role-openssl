@@ -1,0 +1,27 @@
+- name: Generate RSA key
+  command: >
+    openssl genrsa
+      -out {{ openssl_cert_path }}{{ loop_cert_name }}.key
+      2048
+      creates={{ openssl_cert_path }}{{ loop_cert_name }}.key
+
+- name: Generate CSR
+  command: >
+    openssl req
+      -new -sha256
+      -subj "/CN={{ loop_cert_name }}"
+      -key {{ openssl_cert_path }}{{ loop_cert_name }}.key
+      -out {{ openssl_cert_path }}{{ loop_cert_name }}.csr
+      -config /etc/ssl/ssl.config
+      creates={{ openssl_cert_path }}{{ loop_cert_name }}.csr
+
+- name: Generate self-signed SSL certificate
+  command: >
+    openssl req -nodes
+      -x509
+      -days 365
+      -in {{ openssl_cert_path }}{{ loop_cert_name }}.csr
+      -key {{ openssl_cert_path }}{{ loop_cert_name }}.key
+      -out {{ openssl_cert_path }}{{ loop_cert_name }}.pem
+      -config /etc/ssl/ssl.config
+      creates={{ openssl_cert_path }}{{ loop_cert_name }}.pem

@@ -1,0 +1,17 @@
+---
+- name: Generate key and certificate request
+  command: >
+    openssl req -new -sha256 -nodes -out {{ openssl_cert_path }}{{ openssl_cert_common_name }}.csr -newkey rsa:2048
+      -subj "/CN={{ openssl_cert_common_name }}/"
+      -keyout {{ openssl_cert_path }}{{ openssl_cert_common_name }}.key
+      -config /etc/ssl/ssl.config
+      creates={{ openssl_cert_path }}{{ openssl_cert_common_name }}.csr
+
+- name: Generate certificate
+  command: >
+    openssl x509 -req -in {{ openssl_cert_path }}{{ openssl_cert_common_name }}.csr
+      -CA {{ openssl_cert_path }}ca.crt -CAkey {{ openssl_cert_path }}ca.key
+      -CAcreateserial
+      -out {{ openssl_cert_path }}{{ openssl_cert_common_name }}.crt
+      -days 365 -sha256 -extfile /etc/ssl/v3.ext
+      creates={{ openssl_cert_path }}{{ openssl_cert_common_name }}.crt

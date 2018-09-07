@@ -1,0 +1,87 @@
+- name: Make sure openssl exists
+  apt:
+    pkg: openssl
+    state: latest
+
+- name: Generate SSL config file
+  template:
+    src: ssl.config.j2
+    dest: /etc/ssl/ssl.config
+    mode: 0600
+
+- name: Generate SSL extension config file
+  template:
+    src: v3.ext.j2
+    dest: /etc/ssl/v3.ext
+    mode: 0600
+
+- name: Include - Generate CA
+  include_tasks: "generate-ca.yml"
+  when: openssl_generate_ca == true
+
+- name: Include - Generate signed cert
+  include_tasks: "generate-signed-cert.yml"
+  when: openssl_generate_ca == true and openssl_cert_name is defined
+
+- name: Include - Generate multiple self-signed certs
+  include_tasks: "generate-self-signed-cert.yml"
+  with_items: "{{ openssl_cert_names }}"
+  loop_control:
+    loop_var: loop_cert_name
+  when: openssl_generate_selfsigned_cert == true and openssl_cert_names is defined
+
+- name: Include - Generate a single self-signed cert (compat)
+  include_tasks: "generate-self-signed-cert.yml"
+  vars:
+    loop_cert_name: "{{ openssl_cert_name }}"
+  when: openssl_generate_selfsigned_cert == true and openssl_cert_name is defined
+
+- name: Create ssl crt from template
+  copy:
+    content: "{{ openssl_cert_template_crt }}"
+    dest: "{{ openssl_cert_path }}{{ openssl_cert_name }}.crt"
+  when: openssl_cert_template_crt != ""
+
+- name: Create ssl key from template
+  copy:
+    content: "{{ openssl_cert_template_key }}"
+    dest: "{{ openssl_cert_path }}{{ openssl_cert_name }}.key"
+  when: openssl_cert_template_key != ""
+
+- name: Create ssl PEM
+  shell: "cat {{ openssl_cert_path }}{{ openssl_cert_name }}.key {{ openssl_cert_path }}{{ openssl_cert_name }}.crt > {{ openssl_cert_path }}{{ openssl_cert_name }}.pem"
+  args:
+    creates: "{{ openssl_cert_path }}{{ openssl_cert_name }}.pem"
+  when: openssl_cert_template_key != ""
+
+- name: Create ssl chain crt from template
+  copy:
+    content: "{{ openssl_cert_template_chain_crt }}"
+    dest: "{{ openssl_cert_path }}{{ openssl_cert_name }}.ca.pem"
+  when: openssl_cert_template_chain_crt != ""
+
+- name: Create ssl crt from file
+  copy:
+    src: "{{ openssl_cert_file }}"
+    dest: "{{ openssl_cert_path }}{{ openssl_cert_name }}.crt"
+  when: openssl_cert_file != ""
+
+- name: Create ssl key from file
+  copy:
+    src: "{{ openssl_key_file }}"
+    dest: "{{ openssl_cert_path }}{{ openssl_cert_name }}.key"
+  when: openssl_key_file != ""
+
+- name: Generate p12 store
+  command: "openssl pkcs12 -export -in {{ openssl_cert_path }}{{ openssl_cert_name }}.crt -inkey {{ openssl_cert_path }}{{ openssl_cert_name }}.key -out {{ openssl_p12_file }} -name {{ openssl_cert_name }} -CAfile {{ openssl_cert_path }}{{ openssl_cert_name }}.ca.pem -caname root -password pass:{{ openssl_p12_pass }}"
+  args:
+    creates: "{{ openssl_p12_file }}"
+  when: openssl_generate_p12|bool == True
+
+- name: Set permissions for p12 store
+  file:
+    mode: 0644
+    owner: root
+    group: root
+    path: "{{ openssl_p12_file }}"
+  when: openssl_generate_p12|bool == True
