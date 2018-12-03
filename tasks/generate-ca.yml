@@ -17,7 +17,7 @@
 - name: Get CA Certificate hash
   command: "openssl x509 -noout -hash -in {{ openssl_cert_path }}ca.crt"
   register: ca_hash
-  changed_when: False
+  changed_when: false
 
 - name: Link CA hash
   file:
