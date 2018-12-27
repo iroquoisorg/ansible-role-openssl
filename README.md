@@ -1,6 +1,6 @@
 # openssl
 
-[![Build Status](https://travis-ci.com/iroquoisorg/ansible-role-openssl.svg?branch=master)](https://travis-ci.com/iroquoisorg/ansible-role-memcached)
+[![Build Status](https://travis-ci.com/iroquoisorg/ansible-role-openssl.svg?branch=master)](https://travis-ci.com/iroquoisorg/ansible-role-openssl)
 
 Ansible role for openssl
 
@@ -13,7 +13,7 @@ This role was prepared and tested for Ubuntu 16.04.
 # Default settings
 
 ```
-
+---
 openssl_generate_ca: false
 openssl_ca_name: Local Certificate Authority
 
@@ -43,7 +43,6 @@ openssl_organization: Corporation
 
 openssl_cert_alternate_names: []
 openssl_cert_ips: []
-
 ```
 
 # Development
